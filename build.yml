@@ -1,0 +1,43 @@
+name: Build Android APK
+on: [push, workflow_dispatch]
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Setup Java SDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - name: Install Cordova
+        run: npm install -g cordova
+
+      - name: Extract Project and Build APK
+        run: |
+          ZIP_FILE=$(ls *.zip | head -n 1)
+          if [ -z "$ZIP_FILE" ]; then
+            echo "EROR: File ZIP tidak ditemukan di repositori!"
+            exit 1
+          fi
+          echo "Mengekstrak file: $ZIP_FILE"
+          unzip "$ZIP_FILE" -d project_folder
+          cd project_folder
+          cordova platform add android
+          cordova build android --packageType=apk
+
+      - name: Upload Finished APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: Global-Exvion-APK
+          path: project_folder/platforms/android/app/build/outputs/apk/debug/app-debug.apk
+          
